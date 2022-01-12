@@ -366,7 +366,7 @@ func (w *textWriter) writeSingularValue(v protoreflect.Value, fd protoreflect.Fi
 		}
 	case protoreflect.StringKind:
 		// NOTE: This does not validate UTF-8 for historical reasons.
-		w.writeQuotedString(string(v.String()))
+		w.writeMyString(string(v.String()))
 	case protoreflect.BytesKind:
 		w.writeQuotedString(string(v.Bytes()))
 	case protoreflect.MessageKind, protoreflect.GroupKind:
@@ -424,6 +424,31 @@ func (w *textWriter) writeQuotedString(s string) {
 			} else {
 				w.buf = append(w.buf, fmt.Sprintf(`\%03o`, c)...)
 			}
+		}
+	}
+	w.WriteByte('"')
+}
+
+func (w *textWriter) writeMyString(s string) {
+	w.WriteByte('"')
+	for i := 0; i < len(s); i++ {
+		switch c := s[i]; c {
+		case '\n':
+			w.buf = append(w.buf, `\n`...)
+		case '\r':
+			w.buf = append(w.buf, `\r`...)
+		case '\t':
+			w.buf = append(w.buf, `\t`...)
+		case '"':
+			w.buf = append(w.buf, `\"`...)
+		case '\\':
+			w.buf = append(w.buf, `\\`...)
+		default:
+			//if isPrint := c >= 0x20 && c < 0x7f; isPrint {
+			w.buf = append(w.buf, c)
+			//} else {
+			//	w.buf = append(w.buf, fmt.Sprintf(`\%03o`, c)...)
+			//}
 		}
 	}
 	w.WriteByte('"')
